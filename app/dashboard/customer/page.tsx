@@ -41,7 +41,7 @@ async function MembershipsList() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {memberships.map((mem) => (
+      {memberships.map((mem: { storeId: number; storeName: string; storeSlug: string; currentBalance: string; creditLimit: string }) => (
         <Card key={mem.storeId}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">

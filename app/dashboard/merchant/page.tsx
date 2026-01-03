@@ -26,7 +26,8 @@ export default async function MerchantDashboard() {
   }
 
   const userId = parseInt(session.user.id!);
-  const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then((res: any) => res[0]);
 
   if (!userStore) {
     return <CreateStoreForm />;

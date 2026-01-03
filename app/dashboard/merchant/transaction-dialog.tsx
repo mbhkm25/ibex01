@@ -29,7 +29,14 @@ export function TransactionDialog({ membershipId, customerName }: TransactionDia
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
-  const [receiptData, setReceiptData] = useState<any>(null); // For success receipt
+  const [receiptData, setReceiptData] = useState<{
+    transactionId: number;
+    date: Date;
+    amount: string;
+    type: "purchase" | "deposit";
+    storeName: string;
+    balanceAfter: string;
+  } | null>(null); // For success receipt
   const router = useRouter();
 
   const handleTransaction = async (type: "purchase" | "deposit") => {
@@ -38,15 +45,15 @@ export function TransactionDialog({ membershipId, customerName }: TransactionDia
 
     try {
       const result = await processTransaction(membershipId, type, amount, note);
-      if (result.success) {
+      if ("success" in result && result.success) {
         setAmount("");
         setNote("");
         setReceiptData(result.data); // Save receipt data
         router.refresh();
       } else {
-        setMessage(result.message || "حدث خطأ");
+        setMessage((result as { message?: string }).message || "حدث خطأ");
       }
-    } catch (e) {
+    } catch {
       setMessage("حدث خطأ غير متوقع");
     } finally {
       setIsLoading(false);

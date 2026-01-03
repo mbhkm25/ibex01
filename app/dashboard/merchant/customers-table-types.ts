@@ -1,9 +1,10 @@
-import { db } from "@/db";
-import { storeMemberships } from "@/db/schema";
-import { eq } from "drizzle-orm";
+// Unused imports commented out
+// import { db } from "@/db";
+// import { storeMemberships } from "@/db/schema";
+// import { eq } from "drizzle-orm";
 
 // Only defining the type needed for the table
-interface Customer {
+export interface Customer {
   id: number;
   fullName: string;
   phone: string;

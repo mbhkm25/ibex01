@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { storeMemberships, users, transactions, stores, products } from "@/db/schema";
+import { storeMemberships, transactions, stores, products } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,7 @@ export default async function CustomerStoreDetailsPage({ params }: { params: Pro
   const userId = parseInt(session.user.id);
 
   // Fetch store and membership details
-  const membership = await db
+  const membershipRes = await db
     .select({
       id: storeMemberships.id,
       storeId: stores.id,
@@ -37,7 +37,9 @@ export default async function CustomerStoreDetailsPage({ params }: { params: Pro
             eq(stores.slug, slug)
         )
     )
-    .then((res) => res[0]);
+    ;
+
+  const membership = membershipRes[0];
 
   if (!membership) {
     notFound();
@@ -109,7 +111,7 @@ export default async function CustomerStoreDetailsPage({ params }: { params: Pro
                     <TableCell colSpan={3} className="text-center text-gray-500">لا توجد عمليات سابقة.</TableCell>
                  </TableRow>
               ) : (
-                transactionHistory.map((tx) => (
+                transactionHistory.map((tx: { id: number; createdAt: string; type: string; amount: string }) => (
                   <TableRow key={tx.id}>
                     <TableCell>{new Date(tx.createdAt).toLocaleDateString("ar-YE")}</TableCell>
                     <TableCell>

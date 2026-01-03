@@ -29,7 +29,7 @@ export async function authenticate(
 }
 
 export async function register(
-  prevState: any,
+  prevState: Record<string, unknown> | null,
   formData: FormData,
 ) {
   const validatedFields = SignupFormSchema.safeParse({
@@ -65,7 +65,7 @@ export async function register(
       role: role as "merchant" | "customer",
     });
     
-  } catch (error) {
+  } catch {
     return {
       message: "حدث خطأ في قاعدة البيانات.",
     };

@@ -3,22 +3,26 @@
 import { db } from "@/db";
 import { storeMemberships, stores, transactions, users } from "@/db/schema";
 import { auth } from "@/auth";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import Decimal from "decimal.js";
 
 // ... previous code ...
+
+export type ProcessTransactionResult =
+  | { success: true; data: { transactionId: number; date: Date; amount: string; type: "deposit" | "purchase"; storeName: string; balanceAfter: string } }
+  | { message: string };
 
 export async function processTransaction(
   membershipId: number,
   type: "deposit" | "purchase",
   amount: string,
   note?: string
-) {
+): Promise<ProcessTransactionResult> {
   const session = await auth();
   if (!session?.user?.id) {
     return { message: "غير مصرح لك بالقيام بهذا الإجراء." };
   }
-
+ 
   const processorId = parseInt(session.user.id);
   const amountDecimal = new Decimal(amount);
 
@@ -27,12 +31,13 @@ export async function processTransaction(
   }
 
   try {
-    return await db.transaction(async (tx) => {
+    return await db.transaction(async (tx: typeof db) => {
       // 1. Get membership and verify authorization
       // We need to fetch user role to check permissions
-      const processor = await tx.select().from(users).where(eq(users.id, processorId)).then(res => res[0]);
+      const processorRes = await tx.select().from(users).where(eq(users.id, processorId));
+      const processor = processorRes[0];
       
-      const membership = await tx
+      const membershipRes = await tx
         .select({
             id: storeMemberships.id,
             currentBalance: storeMemberships.currentBalance,
@@ -43,8 +48,9 @@ export async function processTransaction(
         })
         .from(storeMemberships)
         .innerJoin(stores, eq(storeMemberships.storeId, stores.id))
-        .where(eq(storeMemberships.id, membershipId))
-        .then((res) => res[0]);
+        .where(eq(storeMemberships.id, membershipId));
+
+      const membership = membershipRes[0];
 
       if (!membership) {
         throw new Error("العضوية غير موجودة.");
@@ -66,7 +72,7 @@ export async function processTransaction(
 
       const currentBalance = new Decimal(membership.currentBalance);
       const creditLimit = new Decimal(membership.creditLimit);
-      let newBalance: Decimal;
+      let newBalance: InstanceType<typeof Decimal>;
 
       if (type === "purchase") {
         if (currentBalance.plus(creditLimit).lessThan(amountDecimal)) {
@@ -105,8 +111,9 @@ export async function processTransaction(
           }
       };
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Transaction error:", error);
-    return { message: error.message || "حدث خطأ أثناء معالجة العملية." };
+    const message = error instanceof Error ? error.message : "حدث خطأ أثناء معالجة العملية.";
+    return { message };
   }
 }

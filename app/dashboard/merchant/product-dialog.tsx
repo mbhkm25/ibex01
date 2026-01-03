@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { upsertProduct } from "@/app/actions/products";
 import { useActionState } from "react";
 import { Plus, Edit } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Product {
   id: number;
@@ -31,7 +31,7 @@ interface Product {
 export function ProductDialog({ product }: { product?: Product }) {
   const [isOpen, setIsOpen] = useState(false);
   
-  const handleAction = async (prevState: any, formData: FormData) => {
+    const handleAction = async (prevState: Record<string, unknown> | null, formData: FormData) => {
       const result = await upsertProduct(prevState, formData);
       if (result.success) {
           setIsOpen(false);

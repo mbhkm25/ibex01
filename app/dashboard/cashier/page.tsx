@@ -1,7 +1,4 @@
 import { auth } from "@/auth";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +14,7 @@ export default async function CashierDashboard({
 }) {
   const session = await auth();
 
-  if (!session?.user || (session.user as any).role !== "cashier") {
+  if (!session?.user || (session.user as { role?: string }).role !== "cashier") {
     redirect("/login");
   }
 
@@ -27,7 +24,7 @@ export default async function CashierDashboard({
   const allCustomers = await getStoreCustomers();
   
   const filteredCustomers = query 
-    ? allCustomers.filter(c => 
+    ? allCustomers.filter((c: { fullName: string; phone: string }) => 
         c.fullName.toLowerCase().includes(query) || 
         c.phone.includes(query)
       ) 
