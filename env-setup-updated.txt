@@ -1,0 +1,3 @@
+DATABASE_URL='postgresql://neondb_owner:npg_A5lR1tmEifkZ@ep-gentle-resonance-a77ecdpa-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require'
+AUTH_SECRET='7956b272e34d4fcd406458ce6d68278034e37bbc76727721af93164e0edc540a'
+
