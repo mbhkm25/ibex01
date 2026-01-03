@@ -12,7 +12,7 @@ const SettingsSchema = z.object({
   password: z.string().optional(),
 });
 
-export async function updateSettings(prevState: any, formData: FormData) {
+export async function updateSettings(prevState: Record<string, unknown> | null, formData: FormData) {
     const session = await auth();
     if (!session?.user?.id) return { message: "Unauthorized" };
 
@@ -25,7 +25,7 @@ export async function updateSettings(prevState: any, formData: FormData) {
     if (!validated.success) return { message: "بيانات غير صالحة" };
 
     try {
-        const updateData: any = { fullName: validated.data.fullName };
+        const updateData: Record<string, string> = { fullName: validated.data.fullName };
         
         if (password && password.length >= 6) {
             updateData.password = await bcrypt.hash(password, 10);
@@ -34,7 +34,7 @@ export async function updateSettings(prevState: any, formData: FormData) {
         await db.update(users).set(updateData).where(eq(users.id, userId));
         
         return { success: true, message: "تم تحديث البيانات بنجاح" };
-    } catch (e) {
+    } catch {
         return { message: "Error updating settings" };
     }
 }

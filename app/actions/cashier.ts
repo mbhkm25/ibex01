@@ -14,12 +14,13 @@ const CashierSchema = z.object({
   password: z.string().min(6, "كلمة المرور 6 أحرف على الأقل"),
 });
 
-export async function createCashier(prevState: any, formData: FormData) {
+export async function createCashier(prevState: Record<string, unknown> | null, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) return { message: "Unauthorized" };
 
   const userId = parseInt(session.user.id);
-  const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then((res: any) => res[0]);
 
   if (!userStore) return { message: "Store not found" };
 
@@ -51,7 +52,7 @@ export async function createCashier(prevState: any, formData: FormData) {
       
       revalidatePath("/dashboard/merchant");
       return { success: true };
-  } catch (e) {
+  } catch {
       return { message: "Error creating cashier" };
   }
 }
@@ -61,11 +62,14 @@ export async function getStoreCashiers(storeId?: number) {
         const session = await auth();
         if (!session?.user?.id) return [];
         const userId = parseInt(session.user.id);
-        const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then((res: any) => res[0]);
         if (!userStore) return [];
         storeId = userStore.id;
     }
 
-    return await db.select().from(users).where(and(eq(users.storeId, storeId), eq(users.role, "cashier")));
+    const resolvedStoreId = storeId as number;
+
+    return await db.select().from(users).where(and(eq(users.storeId, resolvedStoreId), eq(users.role, "cashier")));
 }
 

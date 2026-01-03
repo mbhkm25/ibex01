@@ -13,7 +13,8 @@ export default async function SettingsPage() {
   }
 
   const userId = parseInt(session.user.id);
-  const user = await db.select().from(users).where(eq(users.id, userId)).then(res => res[0]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const user = await db.select().from(users).where(eq(users.id, userId)).then((res: any) => res[0]);
 
   if (!user) return null;
 

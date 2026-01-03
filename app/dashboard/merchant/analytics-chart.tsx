@@ -12,7 +12,12 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function AnalyticsChart({ data }: { data: any[] }) {
+interface ChartData {
+  date: string;
+  [key: string]: string | number;
+}
+
+export function AnalyticsChart({ data }: { data: ChartData[] }) {
   return (
     <Card className="col-span-4">
       <CardHeader>

@@ -23,7 +23,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
           const { phone, password } = parsedCredentials.data;
           
           try {
-            const user = await db.select().from(users).where(eq(users.phone, phone)).then((res) => res[0]);
+            const userRes = await db.select().from(users).where(eq(users.phone, phone));
+            const user = userRes[0];
 
             if (!user) {
                 console.log("User not found");

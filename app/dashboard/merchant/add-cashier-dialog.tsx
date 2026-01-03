@@ -20,7 +20,7 @@ import { Plus } from "lucide-react";
 export function AddCashierDialog() {
   const [isOpen, setIsOpen] = useState(false);
   
-  const handleAction = async (prevState: any, formData: FormData) => {
+    const handleAction = async (prevState: Record<string, unknown> | null, formData: FormData) => {
       const result = await createCashier(prevState, formData);
       if (result.success) {
           setIsOpen(false);
