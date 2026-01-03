@@ -9,7 +9,8 @@ import { JoinButton } from "./join-button";
 
 export default async function JoinStorePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const store = await db.select().from(stores).where(eq(stores.slug, slug)).then(res => res[0]);
+  const storeRes = await db.select().from(stores).where(eq(stores.slug, slug));
+  const store = storeRes[0];
 
   if (!store) {
     notFound();
@@ -37,7 +38,7 @@ export default async function JoinStorePage({ params }: { params: Promise<{ slug
   
   // Check if already a member
   const userId = parseInt(session.user.id);
-  const existingMembership = await db
+  const existingMembershipRes = await db
     .select()
     .from(storeMemberships)
     .where(
@@ -45,8 +46,9 @@ export default async function JoinStorePage({ params }: { params: Promise<{ slug
         eq(storeMemberships.userId, userId),
         eq(storeMemberships.storeId, store.id)
       )
-    )
-    .then((res) => res[0]);
+    );
+
+  const existingMembership = existingMembershipRes[0];
 
   if (existingMembership) {
       redirect("/dashboard/customer");

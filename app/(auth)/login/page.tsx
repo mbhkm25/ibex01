@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
-import { authenticate } from "@/app/actions/auth";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,10 +10,34 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription }
 import Link from "next/link";
 
 export default function LoginPage() {
-  const [errorMessage, formAction, isPending] = useActionState(
-    authenticate,
-    undefined
-  );
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    const res = await signIn("credentials", {
+      redirect: false,
+      phone,
+      password,
+    } as Record<string, unknown>);
+
+    const typedRes = res as unknown as { error?: string } | undefined;
+
+    if (typedRes && typedRes.error) {
+      setErrorMessage(typedRes.error || "فشل تسجيل الدخول");
+      setIsLoading(false);
+      return;
+    }
+
+    // Successful sign-in: redirect to home or dashboard
+    router.push("/");
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 bg-gray-50/50">
@@ -22,7 +47,7 @@ export default function LoginPage() {
           <CardDescription>أدخل بياناتك للمتابعة</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={formAction} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="phone" className="text-gray-700 font-semibold">رقم الهاتف</Label>
               <Input
@@ -31,6 +56,8 @@ export default function LoginPage() {
                 name="phone"
                 placeholder="0770000000"
                 required
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="text-right bg-white dir-ltr"
               />
             </div>
@@ -41,12 +68,14 @@ export default function LoginPage() {
                 type="password"
                 name="password"
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="text-right bg-white dir-ltr"
               />
             </div>
             <div className="pt-4">
-              <Button type="submit" className="w-full font-bold" size="lg" disabled={isPending}>
-                {isPending ? "جاري الدخول..." : "دخول"}
+              <Button type="submit" className="w-full font-bold" size="lg" disabled={isLoading}>
+                {isLoading ? "جاري الدخول..." : "دخول"}
               </Button>
             </div>
             {errorMessage && (

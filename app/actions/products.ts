@@ -19,27 +19,32 @@ export async function getStoreProducts(storeId?: number) {
         const session = await auth();
         if (!session?.user?.id) return [];
         const userId = parseInt(session.user.id);
-        const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+        const userStoreRes = await db.select().from(stores).where(eq(stores.ownerId, userId));
+        const userStore = userStoreRes[0];
         if (!userStore) return [];
         storeId = userStore.id;
     }
 
+  const resolvedStoreId = storeId as number;
+
   return await db
     .select()
     .from(products)
-    .where(eq(products.storeId, storeId))
+    .where(eq(products.storeId, resolvedStoreId))
     .orderBy(desc(products.id));
 }
 
-export async function upsertProduct(prevState: any, formData: FormData) {
+export async function upsertProduct(prevState: Record<string, unknown> | null, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) {
     return { message: "غير مصرح لك." };
   }
   
   const userId = parseInt(session.user.id);
-  const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
-  
+  const userStoreRes = await db.select().from(stores).where(eq(stores.ownerId, userId));
+
+  const userStore = userStoreRes[0];
+
   if (!userStore) {
       return { message: "لم يتم العثور على المتجر." };
   }
@@ -78,7 +83,7 @@ export async function upsertProduct(prevState: any, formData: FormData) {
     
     revalidatePath("/dashboard/merchant");
     return { success: true };
-  } catch (error) {
+  } catch {
     return { message: "حدث خطأ في قاعدة البيانات." };
   }
 }
@@ -88,16 +93,18 @@ export async function deleteProduct(productId: number) {
   if (!session?.user?.id) return { message: "Unauthorized" };
   
   const userId = parseInt(session.user.id);
-  const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+    const userStoreRes = await db.select().from(stores).where(eq(stores.ownerId, userId));
 
-  if (!userStore) return { message: "Store not found" };
+    const userStore = userStoreRes[0];
 
-  try {
+    if (!userStore) return { message: "Store not found" };
+
+    try {
       await db.delete(products).where(and(eq(products.id, productId), eq(products.storeId, userStore.id)));
       revalidatePath("/dashboard/merchant");
       return { success: true };
-  } catch (error) {
+    } catch {
       return { message: "Failed to delete" };
-  }
+    }
 }
 

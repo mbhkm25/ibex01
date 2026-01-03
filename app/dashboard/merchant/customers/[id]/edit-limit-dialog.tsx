@@ -33,8 +33,8 @@ export function EditLimitDialog({ membershipId, currentLimit }: { membershipId: 
         } else {
             alert(res.message);
         }
-    } catch (e) {
-        alert("Error");
+    } catch {
+      alert("Error");
     } finally {
         setIsLoading(false);
     }

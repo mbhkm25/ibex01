@@ -5,9 +5,8 @@ import { stores } from "@/db/schema";
 import { CreateStoreSchema } from "@/lib/definitions";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
-export async function createStore(prevState: any, formData: FormData) {
+export async function createStore(prevState: Record<string, unknown> | null, formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) {
     return { message: "غير مصرح لك بالقيام بهذا الإجراء." };

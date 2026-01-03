@@ -1,12 +1,12 @@
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { storeMemberships, users, transactions, stores } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { notFound, redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { TransactionDialog } from "../transaction-dialog";
+import { TransactionDialog } from "../../transaction-dialog";
 import { EditLimitDialog } from "./edit-limit-dialog";
 
 export default async function CustomerDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,7 +20,7 @@ export default async function CustomerDetailsPage({ params }: { params: Promise<
   const merchantId = parseInt(session.user.id);
 
   // Fetch membership details and verify ownership
-  const membership = await db
+  const membershipRes = await db
     .select({
       id: storeMemberships.id,
       currentBalance: storeMemberships.currentBalance,
@@ -36,7 +36,9 @@ export default async function CustomerDetailsPage({ params }: { params: Promise<
     .innerJoin(users, eq(storeMemberships.userId, users.id))
     .innerJoin(stores, eq(storeMemberships.storeId, stores.id))
     .where(eq(storeMemberships.id, membershipId))
-    .then((res) => res[0]);
+    ;
+
+  const membership = membershipRes[0];
 
   if (!membership) {
     notFound();
@@ -112,7 +114,7 @@ export default async function CustomerDetailsPage({ params }: { params: Promise<
                     <TableCell colSpan={5} className="text-center text-gray-500">لا توجد عمليات سابقة.</TableCell>
                  </TableRow>
               ) : (
-                transactionHistory.map((tx) => (
+                transactionHistory.map((tx: { id: number; createdAt: string; type: string; amount: string; balanceAfter: string; note?: string }) => (
                   <TableRow key={tx.id}>
                     <TableCell>{new Date(tx.createdAt).toLocaleString("ar-YE")}</TableCell>
                     <TableCell>

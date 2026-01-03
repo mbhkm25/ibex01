@@ -2,16 +2,16 @@
 
 import { db } from "@/db";
 import { transactions, storeMemberships, stores, users } from "@/db/schema";
-import { and, eq, sql, gte, lt, desc } from "drizzle-orm";
+import { and, eq, sql, gte, lt } from "drizzle-orm";
 import { auth } from "@/auth";
-import Decimal from "decimal.js";
 
 export async function getMerchantStats(storeId?: number) {
   if (!storeId) {
      const session = await auth();
      if (!session?.user?.id) return null;
      const userId = parseInt(session.user.id);
-     const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then((res: any) => res[0]);
      if (!userStore) return null;
      storeId = userStore.id;
   }
@@ -22,6 +22,8 @@ export async function getMerchantStats(storeId?: number) {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
+  const resolvedStoreId = storeId as number;
+
   // 1. Today's Sales (Purchase transactions created today)
   const todaySalesResult = await db
     .select({
@@ -31,7 +33,7 @@ export async function getMerchantStats(storeId?: number) {
     .innerJoin(storeMemberships, eq(transactions.membershipId, storeMemberships.id))
     .where(
       and(
-        eq(storeMemberships.storeId, storeId),
+        eq(storeMemberships.storeId, resolvedStoreId),
         eq(transactions.type, "purchase"),
         gte(transactions.createdAt, today),
         lt(transactions.createdAt, tomorrow)
@@ -47,7 +49,7 @@ export async function getMerchantStats(storeId?: number) {
     .from(storeMemberships)
     .where(
         and(
-            eq(storeMemberships.storeId, storeId),
+            eq(storeMemberships.storeId, resolvedStoreId),
             lt(storeMemberships.currentBalance, "0")
         )
     );
@@ -61,7 +63,7 @@ export async function getMerchantStats(storeId?: number) {
     .innerJoin(storeMemberships, eq(transactions.membershipId, storeMemberships.id))
     .where(
       and(
-        eq(storeMemberships.storeId, storeId),
+        eq(storeMemberships.storeId, resolvedStoreId),
         eq(transactions.type, "deposit")
       )
     );
@@ -78,16 +80,19 @@ export async function getLast7DaysTransactions(storeId?: number) {
         const session = await auth();
         if (!session?.user?.id) return [];
         const userId = parseInt(session.user.id);
-        const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then((res: any) => res[0]);
         if (!userStore) return [];
         storeId = userStore.id;
     }
+
+  const resolvedStoreId = storeId as number;
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    const result = await db
+    const result: Array<{ date: string; type: string; amount: string }> = await db
         .select({
             date: sql<string>`DATE(${transactions.createdAt})`,
             type: transactions.type,
@@ -97,7 +102,7 @@ export async function getLast7DaysTransactions(storeId?: number) {
         .innerJoin(storeMemberships, eq(transactions.membershipId, storeMemberships.id))
         .where(
             and(
-                eq(storeMemberships.storeId, storeId),
+                eq(storeMemberships.storeId, resolvedStoreId),
                 gte(transactions.createdAt, sevenDaysAgo)
             )
         )
@@ -140,10 +145,13 @@ export async function getDebtors(storeId?: number) {
         const session = await auth();
         if (!session?.user?.id) return [];
         const userId = parseInt(session.user.id);
-        const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userStore = await db.select().from(stores).where(eq(stores.ownerId, userId)).then((res: any) => res[0]);
         if (!userStore) return [];
         storeId = userStore.id;
     }
+
+  const resolvedStoreId = storeId as number;
 
     const debtors = await db
         .select({
@@ -157,7 +165,7 @@ export async function getDebtors(storeId?: number) {
         .innerJoin(users, eq(storeMemberships.userId, users.id))
         .where(
             and(
-                eq(storeMemberships.storeId, storeId),
+                eq(storeMemberships.storeId, resolvedStoreId),
                 lt(storeMemberships.currentBalance, "0")
             )
         )

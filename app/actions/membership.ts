@@ -12,7 +12,7 @@ import Decimal from "decimal.js";
 // Re-exporting joinStore etc. 
 // I need to update getStoreCustomers logic.
 
-export async function joinStore(prevState: any, formData: FormData) {
+export async function joinStore(prevState: Record<string, unknown> | null, formData: FormData) {
   // ... existing code ...
   // Keep as is, copy from previous if needed, but I am editing specific function below
   // For brevity I will just rewrite the file content carefully or use search_replace if risky.
@@ -31,7 +31,7 @@ export async function joinStore(prevState: any, formData: FormData) {
   }
 
   // Check if already a member
-  const existingMembership = await db
+  const existingMembershipRes = await db
     .select()
     .from(storeMemberships)
     .where(
@@ -39,8 +39,10 @@ export async function joinStore(prevState: any, formData: FormData) {
         eq(storeMemberships.userId, userId),
         eq(storeMemberships.storeId, storeId)
       )
-    )
-    .then((res) => res[0]);
+    );
+
+  const existingMembership = existingMembershipRes[0];
+
 
   if (existingMembership) {
     redirect("/dashboard/customer");
@@ -95,13 +97,15 @@ export async function getStoreCustomers() {
   const userId = parseInt(session.user.id);
   
   // Fetch user role and store info
-  const user = await db.select().from(users).where(eq(users.id, userId)).then(res => res[0]);
+  const userRes = await db.select().from(users).where(eq(users.id, userId));
+  const user = userRes[0];
   if (!user) return [];
 
   let storeId: number | undefined;
 
   if (user.role === 'merchant') {
-      const store = await db.select().from(stores).where(eq(stores.ownerId, userId)).then(res => res[0]);
+      const storeRes = await db.select().from(stores).where(eq(stores.ownerId, userId));
+      const store = storeRes[0];
       storeId = store?.id;
   } else if (user.role === 'cashier') {
       storeId = user.storeId || undefined;
@@ -142,16 +146,15 @@ export async function updateCreditLimit(membershipId: number, newLimit: string) 
   
     try {
         // Verify ownership (Only merchant can update limit)
-        const membership = await db
-        .select({
+        const membershipRes = await db.select({
             id: storeMemberships.id,
             storeOwnerId: stores.ownerId
         })
         .from(storeMemberships)
         .innerJoin(stores, eq(storeMemberships.storeId, stores.id))
-        .where(eq(storeMemberships.id, membershipId))
-        .then((res) => res[0]);
+        .where(eq(storeMemberships.id, membershipId));
 
+        const membership = membershipRes[0];
         if (!membership || membership.storeOwnerId !== merchantId) {
             return { message: "غير مصرح لك بتعديل هذا العميل." };
         }
@@ -162,7 +165,7 @@ export async function updateCreditLimit(membershipId: number, newLimit: string) 
         
         revalidatePath(`/dashboard/merchant/customers/${membershipId}`);
         return { success: true };
-    } catch (error) {
-        return { message: "حدث خطأ أثناء التحديث." };
+    } catch {
+      return { message: "حدث خطأ أثناء التحديث." };
     }
 }
